@@ -173,4 +173,3 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 
 	return c.JSON(users)
 }
-
