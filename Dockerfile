@@ -1,0 +1,46 @@
+# Multi-stage build - smaller final image
+# Stage 1: Build the application
+FROM golang:1.21-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server cmd/server/main.go
+
+# Stage 2: Create minimal runtime image
+FROM alpine:latest
+
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates
+
+# Set working directory
+WORKDIR /root/
+
+# Copy the binary from builder
+COPY --from=builder /app/server .
+
+# Copy environment file
+COPY .env .env
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+# Run the application
+CMD ["./server"]

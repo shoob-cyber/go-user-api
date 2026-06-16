@@ -1,0 +1,39 @@
+# Binaries
+*.o
+*.a
+*.so
+*.exe
+*.dll
+*.out
+server
+
+# Go specific
+bin/
+dist/
+vendor/
+*.test
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# Temporary files
+tmp/
+temp/

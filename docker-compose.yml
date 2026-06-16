@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: go-user-api-db
+    environment:
+      POSTGRES_USER: apiuser
+      POSTGRES_PASSWORD: apipassword
+      POSTGRES_DB: user_api_db
+    ports:
+      - "5432:5432"
+    volumes:
+      # Mount migrations into container
+      - ./db/migrations:/docker-entrypoint-initdb.d
+      # Persist database data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apiuser -d user_api_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Go Application Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-user-api-app
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: apiuser
+      DB_PASSWORD: apipassword
+      DB_NAME: user_api_db
+      DB_DRIVER: postgres
+      SERVER_PORT: 3000
+      SERVER_HOST: 0.0.0.0
+      LOG_LEVEL: info
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: go-user-api-network
